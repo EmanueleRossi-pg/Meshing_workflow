@@ -1,0 +1,155 @@
+/*---------------------------------------------------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | OpenFOAM: The Open Source CFD Toolbox           |
+|  \\    /   O peration     | Version:  v2406                                 |
+|   \\  /    A nd           | Website:  www.openfoam.com                      |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    object      snappyHexMeshDict;
+}
+
+// Which of the steps to run
+castellatedMesh true;
+snap            true;
+addLayers       true;
+
+keepPatches true;
+
+geometry
+{
+    cylinder.stl
+    {
+        type triSurfaceMesh;
+        name placeholder;
+    }
+
+    refinementBox
+    {
+        type searchableBox;
+        min (0 0 0);
+        max (0 0 0);
+    }
+};
+
+castellatedMeshControls
+{
+    
+    maxLocalCells       100000;
+    maxGlobalCells      2000000;    
+    minRefinementCells  10;     
+    maxLoadUnbalance    0.10;
+    nCellsBetweenLevels 3;    
+    resolveFeatureAngle 30;    
+
+    features
+    (
+        {
+            file "cylinder.eMesh";
+            level 3;
+        }
+    );
+
+    refinementSurfaces
+    {
+        placeholder
+        {
+            level (2 3);
+            patchInfo 
+            {
+                type wall; 
+                inGroups (placeholderGroup); 
+            }
+        }
+    }
+
+    refinementRegions
+    {
+        refinementBox
+        {
+            mode inside;
+            levels ((1E15 2));
+        }
+    }
+
+    
+    allowFreeStandingZoneFaces true;
+    locationsOutsideMesh ((100 100 100));
+};
+
+snapControls
+{
+    nSmoothPatch       3;       
+    tolerance          2.0;     
+    nSolveIter         30;
+    nRelaxIter         5;
+    nFeatureSnapIter   10;
+    implicitFeatureSnap false;    
+    explicitFeatureSnap true;
+    multiRegionFeatureSnap false;
+};
+
+addLayersControls
+{
+    relativeSizes           true;      
+
+    // How many prism layers to create on each patch
+    layers
+    {
+        "(placeholder).*"      
+        { 
+            nSurfaceLayers 3; 
+            // Local parameters
+            // expansionRatio      1.2;
+            // finalLayerThickness 0.5;
+            // minThickness        0.1;
+        }   
+    }
+
+    // Prism‑layer thickness settings
+    expansionRatio          1.2;    
+    finalLayerThickness     0.5;     
+    minThickness            0.1;   
+
+    // Controls for smoothing and quality
+    nGrow                   0;       // number of cells to grow before extrusion 
+    featureAngle            170;     // maximum angle to extrude at sharp features  
+    maxFaceThicknessRatio   0.5;     // reject faces where layer would be too thick  
+    nSmoothSurfaceNormals   1;       // smoothing iterations for surface normals   
+    nSmoothThickness        10;       // smoothing iterations for layer thickness  
+
+    // Medial‑axis based controls (advanced)
+    minMedialAxisAngle       90;     // angle to pick medial axis points  
+    maxThicknessToMedialRatio 0.3;    // limit thickness relative to medial distance  
+    nSmoothNormals           3;      // smoothing of interior mesh movement directions  
+
+    // Termination and relaxation
+    slipFeatureAngle         30;     // allow slip on non‑extruded features  
+    nRelaxIter               3;      // iterations of relaxation after extrusion  
+    nBufferCellsNoExtrude    0;      // buffer region for terminated layers  
+    nLayerIter               50;     // maximum iterations of layer addition  
+    nRelaxedIter             20;     // iterations after which relaxed quality controls apply  
+};
+
+meshQualityControls
+{
+    #include "meshQualityDict"
+    relaxed { maxNonOrtho 100; }   // 75
+    nSmoothScale     4;
+    errorReduction   0.75;
+};
+
+
+writeFlags
+(
+    scalarLevels
+    layerSets
+    layerFields
+);
+
+
+mergeTolerance 1e-6;

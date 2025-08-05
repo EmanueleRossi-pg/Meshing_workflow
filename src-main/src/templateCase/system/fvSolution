@@ -1,0 +1,96 @@
+/*--------------------------------*- C++ -*----------------------------------*\
+| =========                 |                                                 |
+| \\      /  F ield         | foam-extend: Open Source CFD                    |
+|  \\    /   O peration     | Version:     4.0                                |
+|   \\  /    A nd           | Web:         http://www.foam-extend.org         |
+|    \\/     M anipulation  |                                                 |
+\*---------------------------------------------------------------------------*/
+FoamFile
+{
+    version     2.0;
+    format      ascii;
+    class       dictionary;
+    location    "system";
+    object      fvSolution;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+solvers
+{
+    // Pressure solver 
+    p
+    {
+        solver               GAMG;
+        tolerance            1e-05;
+        relTol               1e-02;
+
+        smoother             GaussSeidel;
+        cacheAgglomeration   true;
+        nCellsInCoarsestLevel 10;
+        agglomerator         faceAreaPair;
+        mergeLevels          1;
+    }
+
+    // Final correction parameters for pressure
+    pFinal
+    {
+        $p;
+        relTol               1e-02;
+    }
+
+    // Common solver for velocity and turbulence variables
+    "(U|k|epsilon)"
+    {
+        solver               smoothSolver;
+        smoother             DILUGaussSeidel;
+        tolerance            1e-04;
+        relTol               0.2;
+    }
+
+    // Final correction parameters for U, k, epsilon
+    "(U|k|epsilon)Final"
+    {
+        $U;
+        relTol               1e-02;
+    }
+}
+
+
+SIMPLE
+{
+    nNonOrthogonalCorrectors 0;
+    consistent true;
+
+    pRefCell 0;
+    pRefValue 0;
+
+    residualControl
+    {
+        "(p|U|k|epsilon)" 1e-05;
+    }
+}
+
+PIMPLE
+{
+    nOuterCorrectors 1;
+    nCorrectors 1;
+    nNonOrthogonalCorrectors 0;
+    pRefCell       0;
+    pRefValue      0;
+}
+
+PISO
+{
+    nCorrectors 1;
+    nNonOrthogonalCorrectors 0;
+    pRefCell       0;
+    pRefValue      0;
+}
+
+relaxationFactors
+{
+    p               0.7;
+    U               0.2;
+    k               0.5;
+    epsilon         0.5;
+}
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
